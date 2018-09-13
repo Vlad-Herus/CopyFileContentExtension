@@ -1,4 +1,7 @@
-﻿using System;
+﻿using CopyFileContentExtension.Services;
+using Microsoft;
+using Microsoft.VisualStudio.Shell;
+using System;
 using System.ComponentModel.Design;
 using System.Globalization;
 using System.IO;
@@ -6,10 +9,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using CopyFileContentExtension.Services;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using Task = System.Threading.Tasks.Task;
 
 namespace CopyFileContentExtension
 {
@@ -21,7 +20,7 @@ namespace CopyFileContentExtension
         /// <summary>
         /// Command will only be show for files with this extension
         /// </summary>
-        const string SUPPORTED_EXT = ".sql";
+        private const string SUPPORTED_EXT = ".sql";
 
         /// <summary>
         /// Command ID.
@@ -36,24 +35,22 @@ namespace CopyFileContentExtension
         /// <summary>
         /// VS Package that provides this command, not null.
         /// </summary>
-        private readonly AsyncPackage m_Package;
+        private readonly Package m_Package;
         private readonly SelectionService m_Selection;
+        private readonly FileContentClipboard m_ContentCopy;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CopyCommand"/> class.
-        /// Adds our command handlers for menu (commands must exist in the command table file)
-        /// </summary>
-        /// <param name="package">Owner package, not null.</param>
-        /// <param name="commandService">Command service to add command to, not null.</param>
-        private CopyCommand(AsyncPackage package, OleMenuCommandService commandService)
+        private CopyCommand(Package package)
         {
             this.m_Package = package ?? throw new ArgumentNullException(nameof(package));
+            OleMenuCommandService commandService = ServiceProvider.GetService((typeof(IMenuCommandService))) as OleMenuCommandService;
             m_Selection = new SelectionService();
+            m_ContentCopy = new FileContentClipboard();
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
 
             var menuCommandID = new CommandID(CommandSet, CommandId);
             OleMenuCommand menuItem = new OleMenuCommand(this.Execute, menuCommandID);
             menuItem.BeforeQueryStatus += Before_Execute;
+            menuItem.Visible = false;
             commandService.AddCommand(menuItem);
         }
 
@@ -69,7 +66,7 @@ namespace CopyFileContentExtension
         /// <summary>
         /// Gets the service provider from the owner package.
         /// </summary>
-        private Microsoft.VisualStudio.Shell.IAsyncServiceProvider ServiceProvider
+        private IServiceProvider ServiceProvider
         {
             get
             {
@@ -81,14 +78,9 @@ namespace CopyFileContentExtension
         /// Initializes the singleton instance of the command.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static async Task InitializeAsync(AsyncPackage package)
+        public static void Initialize(Package package)
         {
-            // Switch to the main thread - the call to AddCommand in CopyCommand's constructor requires
-            // the UI thread.
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
-
-            OleMenuCommandService commandService = await package.GetServiceAsync((typeof(IMenuCommandService))) as OleMenuCommandService;
-            Instance = new CopyCommand(package, commandService);
+            Instance = new CopyCommand(package);
         }
 
         /// <summary>
@@ -100,27 +92,39 @@ namespace CopyFileContentExtension
         /// <param name="e">Event args.</param>
         private void Execute(object sender, EventArgs e)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            MessageBox.Show("1234");
-
+            try
+            {
+                var selectedItems = m_Selection.GetFullFilePathAsync(this.ServiceProvider);
+                m_ContentCopy.CopyContents(selectedItems);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Execute failed : {ex.ToString()}");
+            }
         }
 
-        private async void Before_Execute(object sender, EventArgs e)
+        private void Before_Execute(object sender, EventArgs e)
         {
-            if (sender is OleMenuCommand menuCommand)
+            try
             {
-                var selectedItems = await m_Selection.GetFullFilePathAsync(this.ServiceProvider);
+                if (sender is OleMenuCommand menuCommand)
+                {
+                    var selectedItems = m_Selection.GetFullFilePathAsync(this.ServiceProvider);
 
-                if (selectedItems.All(path =>
-                    string.Equals(Path.GetExtension(path), SUPPORTED_EXT, StringComparison.CurrentCultureIgnoreCase)))
-                {
-                    menuCommand.Visible = true;
+                    if (selectedItems.All(path =>
+                        string.Equals(Path.GetExtension(path), SUPPORTED_EXT, StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        menuCommand.Visible = true;
+                    }
+                    else
+                    {
+                        menuCommand.Visible = false;
+                    }
                 }
-                else
-                {
-                    menuCommand.Visible = false;
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Before_Execute failed : {ex.ToString()}");
             }
         }
     }

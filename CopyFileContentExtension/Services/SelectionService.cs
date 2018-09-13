@@ -13,10 +13,12 @@ namespace CopyFileContentExtension.Services
 {
     class SelectionService
     {
-        public async Task<IEnumerable<string>> GetFullFilePathAsync(Microsoft.VisualStudio.Shell.IAsyncServiceProvider serviceProvider)
+        /// <summary>
+        /// Never returns null.
+        /// </summary>
+        public IEnumerable<string> GetFullFilePathAsync(IServiceProvider serviceProvider)
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var selectionMonitor = await serviceProvider.GetServiceAsync(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
+            var selectionMonitor = serviceProvider.GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
             if (selectionMonitor == null)
             {
                 throw new Exception("Failed to get SVsShellMonitorSelection service.");
