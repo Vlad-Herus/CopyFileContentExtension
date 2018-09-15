@@ -40,7 +40,11 @@ namespace CopyFileContentExtension
     [Guid(CopyPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+#pragma warning disable VSSDK004 // Use BackgroundLoad flag in ProvideAutoLoad attribute for asynchronous auto load.
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+#pragma warning restore VSSDK004 // Use BackgroundLoad flag in ProvideAutoLoad attribute for asynchronous auto load.
+    [ProvideOptionPage(typeof(OptionsPage),
+    "Copy Content", "General", 0, 0, true)]
     public sealed class CopyPackage : Package
     {
         /// <summary>
@@ -66,7 +70,7 @@ namespace CopyFileContentExtension
             base.Initialize();
             CopyCommand.Initialize(this);
         }
-
+        
         #endregion
     }
 }

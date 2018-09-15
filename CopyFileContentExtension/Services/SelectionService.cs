@@ -18,6 +18,7 @@ namespace CopyFileContentExtension.Services
         /// </summary>
         public IEnumerable<string> GetFullFilePathAsync(IServiceProvider serviceProvider)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var selectionMonitor = serviceProvider.GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
             if (selectionMonitor == null)
             {

@@ -1,5 +1,6 @@
 ﻿using CopyFileContentExtension.Services;
 using Microsoft;
+using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.ComponentModel.Design;
@@ -17,11 +18,6 @@ namespace CopyFileContentExtension
     /// </summary>
     internal sealed class CopyCommand
     {
-        /// <summary>
-        /// Command will only be show for files with this extension
-        /// </summary>
-        private const string SUPPORTED_EXT = ".sql";
-
         /// <summary>
         /// Command ID.
         /// </summary>
@@ -43,6 +39,7 @@ namespace CopyFileContentExtension
         {
             this.m_Package = package ?? throw new ArgumentNullException(nameof(package));
             OleMenuCommandService commandService = ServiceProvider.GetService((typeof(IMenuCommandService))) as OleMenuCommandService;
+            Assumes.Present(commandService);
             m_Selection = new SelectionService();
             m_ContentCopy = new FileContentClipboard();
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
@@ -94,6 +91,7 @@ namespace CopyFileContentExtension
         {
             try
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 var selectedItems = m_Selection.GetFullFilePathAsync(this.ServiceProvider);
                 m_ContentCopy.CopyContents(selectedItems);
             }
@@ -107,12 +105,12 @@ namespace CopyFileContentExtension
         {
             try
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 if (sender is OleMenuCommand menuCommand)
                 {
                     var selectedItems = m_Selection.GetFullFilePathAsync(this.ServiceProvider);
 
-                    if (selectedItems.All(path =>
-                        string.Equals(Path.GetExtension(path), SUPPORTED_EXT, StringComparison.CurrentCultureIgnoreCase)))
+                    if (selectedItems.All(path => FilePathSatiesfiesSettings(Path.GetFileName(path))))
                     {
                         menuCommand.Visible = true;
                     }
@@ -126,6 +124,13 @@ namespace CopyFileContentExtension
             {
                 MessageBox.Show($"Before_Execute failed : {ex.ToString()}");
             }
+        }
+
+        private bool FilePathSatiesfiesSettings(string filePath)
+        {
+            var patterns = (Settings.Instance.FIlePatterns ?? "").Split(',');
+
+            return patterns.Any(pattern => LikeOperator.LikeString(filePath, pattern, Microsoft.VisualBasic.CompareMethod.Text));
         }
     }
 }

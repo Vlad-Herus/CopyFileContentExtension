@@ -51,10 +51,10 @@
               <CommandFlag>DynamicVisibility</CommandFlag>
           If you do not want an image next to your command, remove the Icon node /> -->
       <Button guid="guidProjectGroupSet" id="CopyCommandId" type="Button">
-        <!--<Icon guid="guidImages" id="bmpPic1" />-->
+        <Icon guid="guidImages" id="bmpPic1" />
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Invoke CopyCommand</ButtonText>
+          <ButtonText>Copy Content</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -66,16 +66,16 @@
             bitmap strip containing the bitmaps and then there are the numeric ids of the elements used
             inside a button definition. An important aspect of this declaration is that the element id
             must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
-      <Bitmap guid="guidImages" href="Resources\CopyCommand.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough"/>
+      <Bitmap guid="guidImages" href="Resources\Clipboard16.png" usedList="bmpPic1"/>
     </Bitmaps>
   </Commands>
 
   <CommandPlacements>
-    <CommandPlacement guid="guidProjectGroupSet" id="projectGroup">
+    <CommandPlacement guid="guidProjectGroupSet" id="projectGroup" priority="0">
       <!-- The parent of the group will be the file context menu -->
       <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
     </CommandPlacement>
-    <CommandPlacement guid="guidProjectGroupSet" id="CopyCommandId">
+    <CommandPlacement guid="guidProjectGroupSet" id="CopyCommandId" priority="0">
       <Parent guid="guidProjectGroupSet" id="projectGroup"/>
     </CommandPlacement>
   </CommandPlacements>
@@ -91,11 +91,6 @@
 
     <GuidSymbol name="guidImages" value="{5aa4f7b7-f58d-4b3b-b8ac-09521458ae42}" >
       <IDSymbol name="bmpPic1" value="1" />
-      <IDSymbol name="bmpPic2" value="2" />
-      <IDSymbol name="bmpPicSearch" value="3" />
-      <IDSymbol name="bmpPicX" value="4" />
-      <IDSymbol name="bmpPicArrows" value="5" />
-      <IDSymbol name="bmpPicStrikethrough" value="6" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>
